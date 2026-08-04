@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Final Racing Game</title>
+
+<style>
+body {
+    margin: 0;
+    background: plum;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+/* Game Area */
+.gameArea {
+    width: 360px;
+    height: 600px;
+    background: pink;
+    position: relative;
+    overflow: hidden;
+    border-left: 5px solid white;
+    border-right: 5px solid white;
+}
+
+/* Road lines */
+.line {
+    position: absolute;
+    width: 8px;
+    height: 80px;
+    background: white;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* Player Car */
+.car {
+    width: 50px;
+    height: 90px;
+    position: absolute;
+    bottom: 20px;
+    left: 155px;
+    background-size: contain;
+    background-repeat: no-repeat;
+}
+
+/* Enemy */
+.enemy {
+    width: 50px;
+    height: 90px;
+    position: absolute;
+    background-size: contain;
+    background-repeat: no-repeat;
+}
+
+/* HUD */
+.score {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: cyan;
+    font-size: 20px;
+}
+
+/* Start */
+.start {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: powderblue;
+    color: white;
+    font-weight: bold;
+    text-align: center;
+    padding-top: 250px;
+    cursor: pointer;
+    font-size: 24px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="gameArea">
+    <div class="score">Score: <span id="score">0</span></div>
+    <div class="start" id="start"> Click to Start!!</div>
+</div>
+
+<script>
+const gameArea = document.querySelector('.gameArea');
+const start = document.getElementById('start');
+
+let keys = {ArrowLeft:false, ArrowRight:false};
+let player = {x:155, speed:5, score:0};
+
+document.addEventListener('keydown', e=>keys[e.key]=true);
+document.addEventListener('keyup', e=>keys[e.key]=false);
+
+start.onclick = startGame;
+
+// ✅ EMBEDDED CAR IMAGES (NO INTERNET NEEDED)
+const playerCarImg = "data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' width='50' height='90'>\
+<rect width='50' height='90' rx='10' fill='red'/>\
+<circle cx='10' cy='70' r='6' fill='black'/>\
+<circle cx='40' cy='70' r='6' fill='black'/>\
+</svg>";
+
+const enemyCarImg = "data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' width='50' height='90'>\
+<rect width='50' height='90' rx='10' fill='yellow'/>\
+<circle cx='10' cy='70' r='6' fill='black'/>\
+<circle cx='40' cy='70' r='6' fill='black'/>\
+</svg>";
+
+function startGame(){
+    gameArea.innerHTML = `
+        <div class="score">Score: <span id="score">0</span></div>
+    `;
+
+    player.score = 0;
+    player.speed = 5;
+
+    // lines
+    for(let i=0;i<5;i++){
+        let line=document.createElement('div');
+        line.classList.add('line');
+        line.y=i*120;
+        line.style.top=line.y+"px";
+        gameArea.appendChild(line);
+    }
+
+    // player
+    let car=document.createElement('div');
+    car.classList.add('car');
+    car.style.backgroundImage = `url("${playerCarImg}")`;
+    gameArea.appendChild(car);
+    player.el = car;
+
+    // enemies
+    for(let i=0;i<3;i++){
+        let e=document.createElement('div');
+        e.classList.add('enemy');
+        e.y=(i+1)*-200;
+        e.style.left=Math.random()*300+"px";
+        e.style.backgroundImage = `url("${enemyCarImg}")`;
+        gameArea.appendChild(e);
+    }
+
+    requestAnimationFrame(gameLoop);
+}
+
+function gameLoop(){
+    moveLines();
+    moveEnemies();
+
+    if(keys.ArrowLeft && player.x > 0) player.x -= player.speed;
+    if(keys.ArrowRight && player.x < 310) player.x += player.speed;
+
+    player.el.style.left = player.x + "px";
+
+    player.score++;
+    document.getElementById('score').innerText = player.score;
+
+    requestAnimationFrame(gameLoop);
+}
+
+function moveLines(){
+    document.querySelectorAll('.line').forEach(line=>{
+        if(line.y > 600) line.y = -100;
+        line.y += player.speed;
+        line.style.top = line.y + "px";
+    });
+}
+
+function moveEnemies(){
+    document.querySelectorAll('.enemy').forEach(e=>{
+        e.y += player.speed;
+        e.style.top = e.y + "px";
+
+        if(e.y > 600){
+            e.y = -200;
+            e.style.left = Math.random()*300 + "px";
+        }
+
+        if(collide(player.el, e)){
+            alert("💥 Game Over! Score: " + player.score);
+            location.reload();
+        }
+    });
+}
+
+function collide(a,b){
+    let r1=a.getBoundingClientRect();
+    let r2=b.getBoundingClientRect();
+    return !(r1.bottom<r2.top||r1.top>r2.bottom||r1.right<r2.left||r1.left>r2.right);
+}
+</script>
+
+</body>
+</html>
